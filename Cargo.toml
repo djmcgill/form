@@ -8,5 +8,4 @@ quote = "0.3"
 
 [dependencies.syn]
 version = "0.11.11"
-path = "../syn"
-features = ["full", "fold", "extra-traits", "printing"]
+features = ["full", "fold", "printing"]
