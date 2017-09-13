@@ -12,5 +12,4 @@ Usage:
 Does not create the cargo project or the cargo manifest file.
 
 TODO:
-    - --force argument doesn't work
     - better error handling
