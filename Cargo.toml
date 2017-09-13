@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["David McGillicuddy <contact@djmcgill.co.uk>"]
 description = "A small script to move inline modules into the proper directory structure"
 licence = "MIT"
+repository = "https://github.com/djmcgill/form"
 
 [dependencies]
 quote = "0.3"
