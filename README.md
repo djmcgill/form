@@ -13,3 +13,6 @@ Does not create the cargo project or the cargo manifest file.
 
 TODO:
     - better error handling
+
+current usage:
+RUST_LOG=form=debug RUST_BACKTRACE=1 cargo run --release -- -i ~/private/code/form/resources/full-lib.rs -f -o ~/private/code/form/test/src
