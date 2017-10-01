@@ -3,7 +3,6 @@ Creates a lib.rs as well as a subdirectory structure in the target directory.
 It's advised (but not necessary) to use scalafmt afterwards.
 Usage:
 ```
-    -f, --force         force the overwriting of the old lib.rs file
     -i, --input FILE    input file to read instead of stdin
     -o, --outdir DIR    set output directory
     -h, --help          print this help menu

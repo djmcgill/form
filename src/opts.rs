@@ -5,14 +5,12 @@ use std::io::{self, Result, Read};
 use std::path::Path;
 
 pub struct FormOpts {
-    pub force: bool,
     pub input: String,
     pub output_dir: String,
 }
 
 impl FormOpts {
     pub fn from_args() -> Result<Option<Self>> {
-        const SHORT_FORCE: &'static str = "f";
         const SHORT_INPUT: &'static str = "i";
         const SHORT_OUTDIR: &'static str = "o";
         const SHORT_HELP: &'static str = "h";
@@ -20,11 +18,6 @@ impl FormOpts {
         let args: Vec<String> = env::args().collect();
         let program = args[0].clone();
         let mut opts = Options::new();
-        opts.optflag(
-            SHORT_FORCE,
-            "force",
-            "force the overwriting of the old lib.rs file",
-        );
         opts.optopt(
             SHORT_INPUT,
             "input",
@@ -43,13 +36,11 @@ impl FormOpts {
             "/Users/davidmcgillicuddy/private/code/form/src/test"
                 .to_string(),
         );
-        let force = matches.opt_present(SHORT_FORCE);
         let input = read_input(matches.opt_str(SHORT_INPUT))?;
 
         Ok(Some(FormOpts {
             output_dir: output_dir,
             input: input,
-            force: force,
         }))
     }
 }
