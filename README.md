@@ -1,3 +1,5 @@
+![crates.io badge](https://img.shields.io/crates/v/form.svg)
+
 A library for splitting apart a large file with multiple modules into the idiomatic rust directory structure, intended for use with svd2rust.
 Creates a lib.rs as well as a subdirectory structure in the target directory.
 It's advised (but not necessary) to use scalafmt afterwards.
