@@ -1,19 +1,28 @@
+# Form
 ![crates.io badge](https://img.shields.io/crates/v/form.svg)
 
 A library for splitting apart a large file with multiple modules into the idiomatic rust directory structure, intended for use with svd2rust.
-Creates a lib.rs as well as a subdirectory structure in the target directory.
-It's advised (but not necessary) to use scalafmt afterwards.
-Usage:
+Creates a lib.rs as well as a subdirectory structure in the target directory. It does NOT create the cargo project or the cargo manifest file.
+
+It's advised (but not necessary) to use rustfmt afterwards.
+## Usage:
+Arguments:
 ```
-    -i, --input FILE    input file to read instead of stdin
+    -i, --input FILE    OPTIONAL: input file to read, defaults to stdin
     -o, --outdir DIR    set output directory
     -h, --help          print this help menu
 ```
 
-Does not create the cargo project or the cargo manifest file.
 
-TODO:
-    - better error handling
+Intended usage:
+```bash
+svd2rust -i FOO.svd | form -o ~/private/code/form/test/src
+```
 
-current usage:
-RUST_LOG=form=debug RUST_BACKTRACE=1 cargo run --release -- -i ~/private/code/form/resources/full-lib.rs -f -o ~/private/code/form/test/src
+Advanced usage:
+```bash
+cargo install form
+export RUST_LOG=form=debug
+export RUST_BACKTRACE=1
+form -i ~/private/code/form/resources/full-lib.rs -o ~/private/code/form/test/src
+```
