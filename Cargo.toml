@@ -1,6 +1,6 @@
 [package]
 name = "form"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["David McGillicuddy <contact@djmcgill.co.uk>"]
 description = "A small script to move inline modules into the proper directory structure"
 license = "MIT"
