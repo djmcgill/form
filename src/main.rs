@@ -89,16 +89,16 @@ impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
     fn fold_sub_crate(&mut self, crate_name: &Ident, rust_crate: Crate) -> Result<(), Error> {
         trace!("Folding over module {}", crate_name);
 
-        let dir_name = &self.current_dir.as_ref().join(crate_name.as_ref());
-
-        let mut dir_builder = DirBuilder::new();
-        info!("Creating directory {}", dir_name.display());
-        dir_builder
-            .recursive(true)
-            .create(dir_name)
-            .unwrap_or_else(|err| {
-                panic!("building {} failed with {}", dir_name.display(), err)
-            });
+        if !self.current_dir.as_ref().exists() {
+            let mut dir_builder = DirBuilder::new();
+            info!("Creating directory {}", self.current_dir.as_ref().display());
+            dir_builder
+                .recursive(true)
+                .create(self.current_dir.as_ref())
+                .unwrap_or_else(|err| {
+                    panic!("building {} failed with {}", self.current_dir.as_ref().display(), err)
+                });
+        }
 
         let mut sub_self = self.sub_mod(crate_name.as_ref());
         let folded_crate = noop_fold_crate(&mut sub_self, rust_crate);
