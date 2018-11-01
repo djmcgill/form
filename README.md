@@ -14,10 +14,11 @@ Arguments:
 ```
 
 
-Intended usage:
+Intended usage (using `svd2rust` 0.12.1 and before):
 ```bash
 svd2rust -i FOO.svd | form -o ~/private/code/form/test/src
 ```
+Usage with `svd2rust` 0.13.0 and later can be found in [svd2rust's documentation](https://docs.rs/svd2rust/).
 
 Advanced usage:
 ```bash
