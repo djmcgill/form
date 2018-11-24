@@ -34,13 +34,12 @@ impl FormOpts {
             print_usage(&program, opts);
             return Ok(None);
         }
-        let output_dir = matches.opt_str(SHORT_OUTDIR).ok_or(err_msg("Output directory missing"))?;
+        let output_dir = matches
+            .opt_str(SHORT_OUTDIR)
+            .ok_or(err_msg("Output directory missing"))?;
         let input = read_input(matches.opt_str(SHORT_INPUT))?;
 
-        Ok(Some(FormOpts {
-            output_dir,
-            input,
-        }))
+        Ok(Some(FormOpts { output_dir, input }))
     }
 }
 
