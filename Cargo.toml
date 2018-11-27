@@ -16,3 +16,8 @@ failure = "0.1.1"
 [dependencies.syn]
 version = "0.11.11"
 features = ["full", "fold", "printing"]
+
+[[bin]]
+name = "form"
+test = false
+doc = false
