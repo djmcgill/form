@@ -5,4 +5,4 @@ jobs:
       - image: rust:1.31
     steps:
       - checkout
-      - cargo test
+      - run: cargo test
