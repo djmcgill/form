@@ -7,5 +7,5 @@ extern crate log;
 extern crate env_logger;
 extern crate failure;
 
-mod util;
-pub use util::create_directory_structure;
+pub mod util;
+pub use crate::util::create_directory_structure;
