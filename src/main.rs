@@ -10,11 +10,11 @@ extern crate failure;
 use log::LevelFilter;
 
 mod opts;
+use crate::opts::FormOpts;
 use failure::*;
-use opts::FormOpts;
 
 mod util;
-use util::create_directory_structure;
+use crate::util::create_directory_structure;
 
 fn main() {
     match run() {
