@@ -16,6 +16,7 @@ impl FormOpts {
         const SHORT_INPUT: &'static str = "i";
         const SHORT_OUTDIR: &'static str = "o";
         const SHORT_HELP: &'static str = "h";
+        const SHORT_VERSION: &'static str = "v";
 
         let args: Vec<String> = env::args().collect();
         let program = args[0].clone();
@@ -28,10 +29,15 @@ impl FormOpts {
         );
         opts.optopt(SHORT_OUTDIR, "outdir", "set output directory", "DIR");
         opts.optflag(SHORT_HELP, "help", "print this help menu");
+        opts.optflag(SHORT_VERSION, "version", "print the version");
 
         let matches = opts.parse(&args[1..]).unwrap();
-        if matches.opt_present("h") {
+        if matches.opt_present(SHORT_HELP) {
             print_usage(&program, opts);
+            return Ok(None);
+        }
+        if matches.opt_present(SHORT_VERSION) {
+            print_version();
             return Ok(None);
         }
         let output_dir = matches
@@ -46,6 +52,10 @@ impl FormOpts {
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
     println!("{}", opts.usage(&brief));
+}
+
+fn print_version() {
+    println!("{} {}", crate::NAME, crate::VERSION);
 }
 
 fn read_input<P: AsRef<Path>>(input_file: Option<P>) -> Result<String, Error> {
