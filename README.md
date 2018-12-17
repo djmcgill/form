@@ -12,6 +12,7 @@ Arguments:
     -i, --input FILE    OPTIONAL: input file to read, defaults to stdin
     -o, --outdir DIR    set output directory
     -h, --help          print this help menu
+    -v, --version       print version information
 ```
 
 
