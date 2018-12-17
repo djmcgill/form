@@ -7,7 +7,7 @@ extern crate log;
 extern crate env_logger;
 extern crate failure;
 
-use log::LevelFilter;
+use env_logger::Env;
 
 mod opts;
 use crate::opts::FormOpts;
@@ -24,8 +24,7 @@ fn main() {
 }
 
 fn run() -> Result<(), Error> {
-    env_logger::Builder::new()
-        .filter_level(LevelFilter::Info)
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .try_init()
         .context("could not initialise env_logger")?;
 
