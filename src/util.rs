@@ -1,6 +1,6 @@
 use quote::ToTokens;
 use syn::fold::*;
-use syn::{Crate, Ident, Item, ItemKind};
+use syn::{Ident, Item};
 
 use std::fs::{DirBuilder, File};
 use std::io::Write;
@@ -13,7 +13,7 @@ pub fn create_directory_structure<P: AsRef<Path>>(
     string_contents: String,
 ) -> Result<(), Error> {
     info!("Started parsing the input as Rust. This can take a minute or two.");
-    let parsed_crate = syn::parse_crate(&string_contents)
+    let parsed_crate = syn::parse_file(&string_contents)
         .map_err(err_msg)
         .context("failed to parse crate")?;
     info!("Finished parsing");
@@ -35,7 +35,7 @@ pub fn create_directory_structure<P: AsRef<Path>>(
 
     // Why doesn't syn::Fold::fold handle errors again?
     // TODO: catch panics?
-    let new_contents = folder.fold_crate(parsed_crate);
+    let new_contents = folder.fold_file(parsed_crate);
     trace!("transformed module contents");
 
     let lib_file_path = base_dir.join("lib.rs");
@@ -62,8 +62,9 @@ impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
 }
 
 impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
-    fn fold_sub_crate(&mut self, crate_name: &Ident, rust_crate: Crate) -> Result<(), Error> {
-        trace!("Folding over module {}", crate_name);
+    fn fold_sub_mod(&mut self, mod_name: Ident, mod_file: syn::File) -> Result<(), Error> {
+        let mod_name = mod_name.to_string();
+        trace!("Folding over module {}", mod_name);
 
         if !self.current_dir.as_ref().exists() {
             let mut dir_builder = DirBuilder::new();
@@ -80,51 +81,52 @@ impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
                 });
         }
 
-        let mut sub_self = self.sub_mod(crate_name.as_ref());
-        let folded_crate = noop_fold_crate(&mut sub_self, rust_crate);
+        let mut sub_self = self.sub_mod(&mod_name);
+        let folded_mod = fold_file(&mut sub_self, mod_file);
         let file_name = self
             .current_dir
             .as_ref()
-            .join(String::from(crate_name.as_ref()) + ".rs");
+            .join(mod_name.to_owned() + ".rs");
         trace!(
             "Writing contents of module {} to file {}",
-            crate_name,
+            mod_name,
             file_name.display()
         );
-        write_crate(folded_crate, &file_name)
+        write_mod_file(folded_mod, &file_name)
             .unwrap_or_else(|err| panic!("writing to {} failed with {}", file_name.display(), err));
         Ok(())
     }
 }
 
-impl<P: AsRef<Path> + Send + Sync> Folder for FileIntoMods<P> {
+impl<P: AsRef<Path> + Send + Sync> Fold for FileIntoMods<P> {
     fn fold_item(&mut self, mut item: Item) -> Item {
-        for rust_crate in extract_crate_from_mod(&mut item.node) {
-            self.fold_sub_crate(&item.ident, rust_crate).unwrap();
+        for (mod_name, mod_file) in extract_mod(&mut item) {
+            self.fold_sub_mod(mod_name, mod_file).unwrap();
         }
-        noop_fold_item(self, item)
+        fold_item(self, item)
     }
 }
 
-fn write_crate(rust_crate: Crate, file_name: &Path) -> Result<(), Error> {
+fn write_mod_file(item_mod: syn::File, file_name: &Path) -> Result<(), Error> {
     trace!("Opening file {}", file_name.display());
     let mut file = File::create(&file_name)
         .context(format_err!("unable to create file {}", file_name.display()))?;
     trace!("Successfully opened file {}", file_name.display());
     debug!("Writing to file {}", file_name.display());
-    write_all_tokens(&rust_crate, &mut file)
+    write_all_tokens(&item_mod, &mut file)
 }
 
-fn extract_crate_from_mod<'a>(node: &'a mut ItemKind) -> Option<Crate> {
-    if let ItemKind::Mod(ref mut maybe_items) = *node {
-        maybe_items.take().map(make_crate)
+fn extract_mod<'a>(node: &'a mut Item) -> Option<(Ident, syn::File)> {
+    if let Item::Mod(mod_item) = &mut *node {
+        let items = mod_item.content.take().unwrap().1;
+        Some((mod_item.ident.clone(), make_file(items)))
     } else {
         None
     }
 }
 
-fn make_crate(items: Vec<Item>) -> Crate {
-    Crate {
+fn make_file(items: Vec<Item>) -> syn::File {
+    syn::File {
         shebang: None,
         attrs: vec![],
         items,
@@ -132,9 +134,9 @@ fn make_crate(items: Vec<Item>) -> Crate {
 }
 
 fn write_all_tokens<T: ToTokens, W: Write>(piece: &T, writer: &mut W) -> Result<(), Error> {
-    let mut new_tokens = quote::Tokens::new();
+    let mut new_tokens = proc_macro2::TokenStream::new();
     piece.to_tokens(&mut new_tokens);
-    let string = new_tokens.into_string();
+    let string = new_tokens.to_string();
     trace!("Written string for tokens, now writing");
     writer
         .write_all(string.as_bytes())
