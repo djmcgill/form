@@ -1,6 +1,6 @@
 [package]
 name = "form"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["David McGillicuddy <contact@djmcgill.co.uk>"]
 description = "A small script to move inline modules into the proper directory structure"
 license = "MIT"
@@ -8,14 +8,15 @@ repository = "https://github.com/djmcgill/form"
 edition = "2018"
 
 [dependencies]
-quote = "0.3"
+quote = "0.6"
+proc-macro2 = "0.4"
 getopts = "0.2"
 log = "0.4.1"
 env_logger = "0.6"
 failure = "0.1.1"
 
 [dependencies.syn]
-version = "0.11.11"
+version = "0.15.0"
 features = ["full", "fold", "printing"]
 
 [[bin]]

@@ -4,7 +4,7 @@ use form::create_directory_structure;
 use std::fs::File;
 use std::path::Path;
 use std::io::Read;
-use syn::parse_crate;
+use syn::parse_file;
 
 #[test]
 fn test_from_reference_files() {
@@ -28,11 +28,11 @@ fn test_from_reference_files() {
 }
 
 fn compare_to_expected<P: AsRef<Path>>(expected: &[u8], path: P) {
-    let expected = parse_crate(std::str::from_utf8(expected).unwrap()).unwrap();
+    let expected = parse_file(std::str::from_utf8(expected).unwrap()).unwrap();
 
     let mut found_string = String::new();
     let mut found_file = File::open(path).unwrap();
     found_file.read_to_string(&mut found_string).unwrap();
-    let found = parse_crate(&found_string).unwrap();
+    let found = parse_file(&found_string).unwrap();
     assert_eq!(expected, found)
 }
