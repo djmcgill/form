@@ -13,10 +13,10 @@ pub struct FormOpts {
 
 impl FormOpts {
     pub fn from_args() -> Result<Option<Self>, Error> {
-        const SHORT_INPUT: &'static str = "i";
-        const SHORT_OUTDIR: &'static str = "o";
-        const SHORT_HELP: &'static str = "h";
-        const SHORT_VERSION: &'static str = "v";
+        const SHORT_INPUT: &str = "i";
+        const SHORT_OUTDIR: &str = "o";
+        const SHORT_HELP: &str = "h";
+        const SHORT_VERSION: &str = "v";
 
         let args: Vec<String> = env::args().collect();
         let program = args[0].clone();
@@ -42,7 +42,7 @@ impl FormOpts {
         }
         let output_dir = matches
             .opt_str(SHORT_OUTDIR)
-            .ok_or(err_msg("Output directory missing"))?;
+            .ok_or_else(|| err_msg("Output directory missing"))?;
         let input = read_input(matches.opt_str(SHORT_INPUT))?;
 
         Ok(Some(FormOpts { output_dir, input }))
