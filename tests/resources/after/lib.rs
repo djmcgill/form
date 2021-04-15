@@ -13,3 +13,5 @@ pub mod interrupt;
 pub use cortex_m::peripheral::TPIU;
 pub struct AC;
 pub mod ac;
+
+mod foo;

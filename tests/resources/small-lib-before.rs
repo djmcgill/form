@@ -23,3 +23,5 @@ pub mod ac {
     }
     pub const AC: AC = AC;
 }
+
+mod foo;

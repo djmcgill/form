@@ -39,5 +39,5 @@ fn run() -> Result<(), Error> {
         create_directory_structure(opts.output_dir, opts.input)?;
         println!("Completed successfully");
     }
-    return Ok(());
+    Ok(())
 }
