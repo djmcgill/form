@@ -31,6 +31,7 @@ pub fn create_directory_structure<P: AsRef<Path>>(
 
     let mut folder = FileIntoMods {
         current_dir: &base_dir,
+        top_level: true,
     };
 
     // Why doesn't syn::Fold::fold handle errors again?
@@ -52,11 +53,13 @@ pub fn create_directory_structure<P: AsRef<Path>>(
 #[derive(Debug)]
 struct FileIntoMods<P: AsRef<Path> + Send + Sync> {
     current_dir: P,
+    top_level: bool,
 }
 impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
     fn sub_mod<Q: AsRef<Path>>(&self, path: Q) -> FileIntoMods<PathBuf> {
         FileIntoMods {
             current_dir: self.current_dir.as_ref().join(path),
+            top_level: false,
         }
     }
 }
@@ -100,7 +103,7 @@ impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
 
 impl<P: AsRef<Path> + Send + Sync> Fold for FileIntoMods<P> {
     fn fold_item(&mut self, mut item: Item) -> Item {
-        for (mod_name, mod_file) in extract_mod(&mut item) {
+        if let Some((mod_name, mod_file)) = extract_mod(&mut item, self.top_level) {
             self.fold_sub_mod(mod_name, mod_file).unwrap();
         }
         fold_item(self, item)
@@ -116,10 +119,16 @@ fn write_mod_file(item_mod: syn::File, file_name: &Path) -> Result<(), Error> {
     write_all_tokens(&item_mod, &mut file)
 }
 
-fn extract_mod<'a>(node: &'a mut Item) -> Option<(Ident, syn::File)> {
+fn extract_mod(node: &mut Item, top_level: bool) -> Option<(Ident, syn::File)> {
     if let Item::Mod(mod_item) = &mut *node {
-        let items = mod_item.content.take().unwrap().1;
-        Some((mod_item.ident.clone(), make_file(items)))
+        if let Some(item_content) = mod_item.content.take() {
+            let items = item_content.1;
+            Some((mod_item.ident.clone(), make_file(items)))
+        } else if top_level {
+            None
+        } else {
+            panic!("Moving nested non-inline `mod` declarations not currently supported.")
+        }
     } else {
         None
     }
