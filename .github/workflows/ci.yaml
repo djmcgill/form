@@ -1,0 +1,34 @@
+on:
+  push:
+    branches: [ staging, trying, main ]
+  pull_request:
+
+name: Continuous integration
+
+jobs:
+  check:
+    name: Cargo check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        TARGET: [x86_64-unknown-linux-gnu, x86_64-pc-windows-msvc]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: ${{ matrix.TARGET }}
+
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.TARGET }}
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --target ${{ matrix.TARGET }}

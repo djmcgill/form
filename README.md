@@ -1,6 +1,8 @@
-# Form
-![crates.io badge](https://img.shields.io/crates/v/form.svg)
+[![crates.io](https://img.shields.io/crates/d/form.svg)](https://crates.io/crates/form)
+[![crates.io](https://img.shields.io/crates/v/form.svg)](https://crates.io/crates/form)
 [![CircleCI](https://circleci.com/gh/djmcgill/form/tree/main.svg?style=svg)](https://circleci.com/gh/djmcgill/form/tree/main)
+
+# Form
 
 A library for splitting apart a large file with multiple modules into the idiomatic rust directory structure, intended for use with svd2rust.
 Creates a lib.rs as well as a subdirectory structure in the target directory. It does NOT create the cargo project or the cargo manifest file.
