@@ -36,7 +36,7 @@ fn run() -> Result<(), Error> {
         FormOpts::from_args().context("could not parse the command line arguments")?;
     // if None, we've already printed a help text or version and have nothing more to do
     if let Some(opts) = try_parsed_args {
-        create_directory_structure(opts.output_dir, opts.input)?;
+        create_directory_structure(opts.output_dir, &opts.input)?;
         println!("Completed successfully");
     }
     Ok(())

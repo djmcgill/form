@@ -10,7 +10,7 @@ use failure::*;
 
 pub fn create_directory_structure<P: AsRef<Path>>(
     base_dir: P,
-    string_contents: String,
+    string_contents: &str,
 ) -> Result<(), Error> {
     info!("Started parsing the input as Rust. This can take a minute or two.");
     let parsed_crate = syn::parse_file(&string_contents)
