@@ -1,10 +1,11 @@
+use anyhow::{anyhow, Result};
 use getopts::Options;
-use std::env;
-use std::fs::File;
-use std::io::{self, Read};
-use std::path::Path;
-
-use failure::*;
+use std::{
+    env,
+    fs::File,
+    io::{self, Read},
+    path::Path,
+};
 
 pub struct FormOpts {
     pub input: String,
@@ -12,7 +13,7 @@ pub struct FormOpts {
 }
 
 impl FormOpts {
-    pub fn from_args() -> Result<Option<Self>, Error> {
+    pub fn from_args() -> Result<Option<Self>> {
         const SHORT_INPUT: &str = "i";
         const SHORT_OUTDIR: &str = "o";
         const SHORT_HELP: &str = "h";
@@ -42,7 +43,7 @@ impl FormOpts {
         }
         let output_dir = matches
             .opt_str(SHORT_OUTDIR)
-            .ok_or_else(|| err_msg("Output directory missing"))?;
+            .ok_or_else(|| anyhow!("Output directory missing"))?;
         let input = read_input(matches.opt_str(SHORT_INPUT))?;
 
         Ok(Some(FormOpts { output_dir, input }))
@@ -58,7 +59,7 @@ fn print_version() {
     println!("{} {}", crate::NAME, crate::VERSION);
 }
 
-fn read_input<P: AsRef<Path>>(input_file: Option<P>) -> Result<String, Error> {
+fn read_input<P: AsRef<Path>>(input_file: Option<P>) -> Result<String> {
     let mut input = String::new();
     match input_file {
         Some(file_name) => {

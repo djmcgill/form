@@ -1,14 +1,11 @@
 #![cfg(test)]
-use tempfile::tempdir;
 use form::create_directory_structure;
-use std::fs::File;
-use std::path::Path;
-use std::io::Read;
+use std::{fs::File, io::Read, path::Path};
 use syn::parse_file;
+use tempfile::tempdir;
 
 #[test]
 fn test_from_reference_files() {
-
     let before_file = std::str::from_utf8(include_bytes!("resources/small-lib-before.rs")).unwrap();
 
     let expected_lib = include_bytes!("resources/after/lib.rs");

@@ -1,21 +1,19 @@
+use anyhow::{Context, Result};
+use log::{debug, info, trace};
 use quote::ToTokens;
-use syn::fold::*;
-use syn::{Ident, Item};
-
-use std::fs::{DirBuilder, File};
-use std::io::Write;
-use std::path::{Path, PathBuf};
-
-use failure::*;
+use std::{
+    fs::{DirBuilder, File},
+    io::Write,
+    path::{Path, PathBuf},
+};
+use syn::{fold::*, Ident, Item};
 
 pub fn create_directory_structure<P: AsRef<Path>>(
     base_dir: P,
     string_contents: &str,
-) -> Result<(), Error> {
+) -> Result<()> {
     info!("Started parsing the input as Rust. This can take a minute or two.");
-    let parsed_crate = syn::parse_file(string_contents)
-        .map_err(err_msg)
-        .context("failed to parse crate")?;
+    let parsed_crate = syn::parse_file(string_contents).context("failed to parse crate")?;
     info!("Finished parsing");
 
     let base_dir = base_dir.as_ref();
@@ -23,10 +21,7 @@ pub fn create_directory_structure<P: AsRef<Path>>(
     dir_builder
         .recursive(true)
         .create(&base_dir)
-        .context(format_err!(
-            "unable to create the directory {}",
-            base_dir.display()
-        ))?;
+        .with_context(|| format!("unable to create the directory {}", base_dir.display()))?;
     info!("Prepared target directory {}", base_dir.display());
 
     let mut folder = FileIntoMods {
@@ -41,10 +36,8 @@ pub fn create_directory_structure<P: AsRef<Path>>(
 
     let lib_file_path = base_dir.join("lib.rs");
 
-    let mut file = File::create(&lib_file_path).context(format_err!(
-        "Unable to create the file {}",
-        lib_file_path.display()
-    ))?;
+    let mut file = File::create(&lib_file_path)
+        .with_context(|| format!("Unable to create the file {}", lib_file_path.display()))?;
     debug!("Writing to file {}", lib_file_path.display());
     write_all_tokens(&new_contents, &mut file).context("unable to write to lib.rs")?;
     Ok(())
@@ -65,7 +58,7 @@ impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
 }
 
 impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
-    fn fold_sub_mod(&mut self, mod_name: Ident, mod_file: syn::File) -> Result<(), Error> {
+    fn fold_sub_mod(&mut self, mod_name: Ident, mod_file: syn::File) -> Result<()> {
         let mod_name = mod_name.to_string();
         trace!("Folding over module {}", mod_name);
 
@@ -86,10 +79,7 @@ impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
 
         let mut sub_self = self.sub_mod(&mod_name);
         let folded_mod = fold_file(&mut sub_self, mod_file);
-        let file_name = self
-            .current_dir
-            .as_ref()
-            .join(mod_name.to_owned() + ".rs");
+        let file_name = self.current_dir.as_ref().join(mod_name.to_owned() + ".rs");
         trace!(
             "Writing contents of module {} to file {}",
             mod_name,
@@ -110,10 +100,10 @@ impl<P: AsRef<Path> + Send + Sync> Fold for FileIntoMods<P> {
     }
 }
 
-fn write_mod_file(item_mod: syn::File, file_name: &Path) -> Result<(), Error> {
+fn write_mod_file(item_mod: syn::File, file_name: &Path) -> Result<()> {
     trace!("Opening file {}", file_name.display());
     let mut file = File::create(&file_name)
-        .context(format_err!("unable to create file {}", file_name.display()))?;
+        .with_context(|| format!("unable to create file {}", file_name.display()))?;
     trace!("Successfully opened file {}", file_name.display());
     debug!("Writing to file {}", file_name.display());
     write_all_tokens(&item_mod, &mut file)
@@ -142,7 +132,7 @@ fn make_file(items: Vec<Item>) -> syn::File {
     }
 }
 
-fn write_all_tokens<T: ToTokens, W: Write>(piece: &T, writer: &mut W) -> Result<(), Error> {
+fn write_all_tokens<T: ToTokens, W: Write>(piece: &T, writer: &mut W) -> Result<()> {
     let mut new_tokens = proc_macro2::TokenStream::new();
     piece.to_tokens(&mut new_tokens);
     let string = new_tokens.to_string();
