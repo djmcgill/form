@@ -1,6 +1,7 @@
 [![crates.io](https://img.shields.io/crates/d/form.svg)](https://crates.io/crates/form)
 [![crates.io](https://img.shields.io/crates/v/form.svg)](https://crates.io/crates/form)
 [![CircleCI](https://circleci.com/gh/djmcgill/form/tree/main.svg?style=svg)](https://circleci.com/gh/djmcgill/form/tree/main)
+[![CI](https://github.com/djmcgill/form/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/djmcgill/form)
 
 # Form
 
