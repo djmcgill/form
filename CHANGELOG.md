@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.11.0] - 2023-10-29
+* Files and directories whose name excluding extensions is a Windows reserved name are renamed by appending an underscore. The module structure and the directory structure remain intact. This is a BREAKING change to the modules that are produced if they have names that now get underscores appended.
+
 ## [v0.10.0] - 2022-07-27
 * Update deps including security advisories and switching failure to anyhow
 
