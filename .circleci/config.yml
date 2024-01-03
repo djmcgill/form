@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: rust:1.61
+      - image: rust:1.75
     steps:
       - checkout
       - run: cargo test
