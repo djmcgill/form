@@ -1,6 +1,6 @@
 [package]
 name = "form"
-version = "0.11.0"
+version = "0.11.1"
 authors = ["David McGillicuddy <contact@djmcgill.co.uk>"]
 description = "A small script to move inline modules into the proper directory structure"
 license = "MIT"
@@ -12,7 +12,7 @@ quote = "1.0.20"
 proc-macro2 = "1.0.42"
 getopts = "0.2.21"
 log = "0.4.17"
-env_logger = "0.9.0"
+env_logger = "0.10.1"
 anyhow = "1.0.58"
 
 [dependencies.syn]
