@@ -11,6 +11,7 @@ use syn::{fold::*, parse_quote, Ident, Item};
 pub fn create_directory_structure<P: AsRef<Path>>(
     base_dir: P,
     string_contents: &str,
+    fmt: bool,
 ) -> Result<()> {
     info!("Started parsing the input as Rust. This can take a minute or two.");
     let parsed_crate = syn::parse_file(string_contents).context("failed to parse crate")?;
@@ -28,6 +29,7 @@ pub fn create_directory_structure<P: AsRef<Path>>(
         current_dir: &base_dir,
         current_mod_fs_name: None,
         has_path_attr: false,
+        fmt,
     };
 
     // Why doesn't syn::Fold::fold handle errors again?
@@ -40,7 +42,7 @@ pub fn create_directory_structure<P: AsRef<Path>>(
     let mut file = File::create(&lib_file_path)
         .with_context(|| format!("Unable to create the file {}", lib_file_path.display()))?;
     debug!("Writing to file {}", lib_file_path.display());
-    write_all_tokens(&new_contents, &mut file).context("unable to write to lib.rs")?;
+    write_file(&new_contents, &mut file, fmt).context("unable to write to lib.rs")?;
     Ok(())
 }
 
@@ -49,6 +51,7 @@ struct FileIntoMods<P: AsRef<Path> + Send + Sync> {
     current_dir: P,
     current_mod_fs_name: Option<String>,
     has_path_attr: bool,
+    fmt: bool,
 }
 impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
     fn sub_mod(&self, path: String, has_path_attr: bool) -> FileIntoMods<PathBuf> {
@@ -56,6 +59,7 @@ impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
             current_dir: self.current_dir.as_ref().join(&path),
             current_mod_fs_name: Some(path),
             has_path_attr,
+            fmt: self.fmt,
         }
     }
 }
@@ -94,7 +98,7 @@ impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
             mod_name,
             file_name.display()
         );
-        write_mod_file(folded_mod, &file_name)
+        write_mod_file(folded_mod, &file_name, self.fmt)
             .unwrap_or_else(|err| panic!("writing to {} failed with {}", file_name.display(), err));
         Ok(())
     }
@@ -112,13 +116,13 @@ impl<P: AsRef<Path> + Send + Sync> Fold for FileIntoMods<P> {
     }
 }
 
-fn write_mod_file(item_mod: syn::File, file_name: &Path) -> Result<()> {
+fn write_mod_file(item_mod: syn::File, file_name: &Path, fmt: bool) -> Result<()> {
     trace!("Opening file {}", file_name.display());
     let mut file = File::create(&file_name)
         .with_context(|| format!("unable to create file {}", file_name.display()))?;
     trace!("Successfully opened file {}", file_name.display());
     debug!("Writing to file {}", file_name.display());
-    write_all_tokens(&item_mod, &mut file)
+    write_file(&item_mod, &mut file, fmt)
 }
 
 fn extract_mod(
@@ -171,10 +175,14 @@ fn make_file(items: Vec<Item>) -> syn::File {
     }
 }
 
-fn write_all_tokens<T: ToTokens, W: Write>(piece: &T, writer: &mut W) -> Result<()> {
-    let mut new_tokens = proc_macro2::TokenStream::new();
-    piece.to_tokens(&mut new_tokens);
-    let string = new_tokens.to_string();
+fn write_file<W: Write>(piece: &syn::File, writer: &mut W, fmt: bool) -> Result<()> {
+    let string = if fmt {
+        prettyplease::unparse(piece)
+    } else {
+        let mut new_tokens = proc_macro2::TokenStream::new();
+        piece.to_tokens(&mut new_tokens);
+        new_tokens.to_string()
+    };
     trace!("Written string for tokens, now writing");
     writer
         .write_all(string.as_bytes())

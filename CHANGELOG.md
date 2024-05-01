@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+* Format result files with `prettyplease` (when `-f` option passed), update `syn`
+
 ## [v0.11.1] - 2024-01-03
 * Bump env_logger to 0.10.1 which changes: `Resolved soundness issue by switching from atty to is-terminal`
 

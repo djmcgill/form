@@ -15,7 +15,7 @@ fn test_from_reference_files() {
     let expected_ac3 = include_bytes!("resources/after/ac/ac2/ac3.rs");
 
     let lib_dir = tempdir().unwrap();
-    create_directory_structure(lib_dir.path(), before_file).unwrap();
+    create_directory_structure(lib_dir.path(), before_file, false).unwrap();
 
     compare_to_expected(expected_lib, lib_dir.path().join("lib.rs"));
     compare_to_expected(expected_interrupt, lib_dir.path().join("interrupt.rs"));
