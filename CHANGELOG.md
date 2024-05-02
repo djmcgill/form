@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.12.1]
 * Format result files with `prettyplease` (when `-f` option passed), update `syn`
 
 ## [v0.11.1] - 2024-01-03

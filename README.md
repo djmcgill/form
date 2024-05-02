@@ -8,7 +8,7 @@
 A library for splitting apart a large file with multiple modules into the idiomatic rust directory structure, intended for use with svd2rust.
 Creates a lib.rs as well as a subdirectory structure in the target directory. It does NOT create the cargo project or the cargo manifest file.
 
-It's advised (but not necessary) to use rustfmt afterwards.
+It's advised (but not necessary) to use rustfmt afterwards, or you can pass `-f` to use `prettyplease`.
 ## Usage:
 Arguments:
 ```
@@ -16,6 +16,7 @@ Arguments:
     -o, --outdir DIR    set output directory
     -h, --help          print this help menu
     -v, --version       print version information
+    -f                  format files with `prettyplease`
 ```
 
 
