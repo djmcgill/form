@@ -10,12 +10,14 @@ use std::{
 pub struct FormOpts {
     pub input: String,
     pub output_dir: String,
+    pub format_output: bool,
 }
 
 impl FormOpts {
     pub fn from_args() -> Result<Option<Self>> {
         const SHORT_INPUT: &str = "i";
         const SHORT_OUTDIR: &str = "o";
+        const SHORT_FMT: &str = "f";
         const SHORT_HELP: &str = "h";
         const SHORT_VERSION: &str = "v";
 
@@ -29,10 +31,16 @@ impl FormOpts {
             "FILE",
         );
         opts.optopt(SHORT_OUTDIR, "outdir", "set output directory", "DIR");
+        opts.optflag(
+            "f",
+            "format-output",
+            "format result with prettyplease formatter",
+        );
         opts.optflag(SHORT_HELP, "help", "print this help menu");
         opts.optflag(SHORT_VERSION, "version", "print the version");
 
         let matches = opts.parse(&args[1..]).unwrap();
+        let format_output = matches.opt_present(SHORT_FMT);
         if matches.opt_present(SHORT_HELP) {
             print_usage(&program, opts);
             return Ok(None);
@@ -46,7 +54,11 @@ impl FormOpts {
             .ok_or_else(|| anyhow!("Output directory missing"))?;
         let input = read_input(matches.opt_str(SHORT_INPUT))?;
 
-        Ok(Some(FormOpts { output_dir, input }))
+        Ok(Some(FormOpts {
+            output_dir,
+            input,
+            format_output,
+        }))
     }
 }
 

@@ -15,7 +15,27 @@ fn test_from_reference_files() {
     let expected_ac3 = include_bytes!("resources/after/ac/ac2/ac3.rs");
 
     let lib_dir = tempdir().unwrap();
-    create_directory_structure(lib_dir.path(), before_file).unwrap();
+    create_directory_structure(lib_dir.path(), before_file, false).unwrap();
+
+    compare_to_expected(expected_lib, lib_dir.path().join("lib.rs"));
+    compare_to_expected(expected_interrupt, lib_dir.path().join("interrupt.rs"));
+    compare_to_expected(expected_ac, lib_dir.path().join("ac.rs"));
+    compare_to_expected(expected_ac2, lib_dir.path().join("ac/ac2.rs"));
+    compare_to_expected(expected_ac3, lib_dir.path().join("ac/ac2/ac3.rs"));
+}
+
+#[test]
+fn test_from_reference_files_with_format() {
+    let before_file = std::str::from_utf8(include_bytes!("resources/small-lib-before.rs")).unwrap();
+
+    let expected_lib = include_bytes!("resources/after/lib.rs");
+    let expected_interrupt = include_bytes!("resources/after/interrupt.rs");
+    let expected_ac = include_bytes!("resources/after/ac.rs");
+    let expected_ac2 = include_bytes!("resources/after/ac/ac2.rs");
+    let expected_ac3 = include_bytes!("resources/after/ac/ac2/ac3.rs");
+
+    let lib_dir = tempdir().unwrap();
+    create_directory_structure(lib_dir.path(), before_file, true).unwrap();
 
     compare_to_expected(expected_lib, lib_dir.path().join("lib.rs"));
     compare_to_expected(expected_interrupt, lib_dir.path().join("interrupt.rs"));
