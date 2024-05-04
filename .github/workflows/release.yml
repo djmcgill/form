@@ -2,7 +2,7 @@ name: release
 on:
   push:
     branches:
-      - workflow-test
+      - main
     tags:
       - v*.*.*
   workflow_dispatch:
