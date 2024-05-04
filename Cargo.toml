@@ -26,4 +26,4 @@ test = false
 doc = false
 
 [dev-dependencies]
-tempfile = "3.3.0"
+tempfile = "3.10.1"
