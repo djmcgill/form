@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [v0.12.1]
+## [v0.12.1] - 2024-04-02
 * Format result files with `prettyplease` (when `-f` option passed), update `syn`
 
 ## [v0.11.1] - 2024-01-03
@@ -22,4 +22,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [v0.9.0] - 2022-07-26
 * Add GHA CI
 
-[Unreleased]: https://github.com/djmcgill/form/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/djmcgill/form/compare/v0.12.1...HEAD
+[v0.12.1]: https://github.com/djmcgill/form/compare/v0.11.1...v0.12.1
+[v0.11.1]: https://github.com/djmcgill/form/compare/v0.11.0...v0.11.1
+[v0.11.0]: https://github.com/djmcgill/form/compare/v0.10.0...v0.11.0
+[v0.10.0]: https://github.com/djmcgill/form/compare/v0.9.0...v0.10.0
