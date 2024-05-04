@@ -1,6 +1,6 @@
 on:
   push:
-    branches: [ staging, trying, main ]
+    branches: [ staging, trying, main, workflow-test ]
   pull_request:
 
 name: CI
@@ -14,21 +14,15 @@ jobs:
         TARGET: [x86_64-unknown-linux-gnu, x86_64-pc-windows-msvc]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          target: ${{ matrix.TARGET }}
+          targets: ${{ matrix.TARGET }}
 
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.TARGET }}
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --target ${{ matrix.TARGET }}
+      - run: cargo check --target ${{ matrix.TARGET }}
