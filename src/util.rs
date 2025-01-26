@@ -26,6 +26,7 @@ pub fn create_directory_structure<P: AsRef<Path>>(
     info!("Prepared target directory {}", base_dir.display());
 
     let mut folder = FileIntoMods {
+        depth: 0,
         current_dir: &base_dir,
         current_mod_fs_name: None,
         has_path_attr: false,
@@ -48,6 +49,7 @@ pub fn create_directory_structure<P: AsRef<Path>>(
 
 #[derive(Debug)]
 struct FileIntoMods<P: AsRef<Path> + Send + Sync> {
+    depth: u32,
     current_dir: P,
     current_mod_fs_name: Option<String>,
     has_path_attr: bool,
@@ -56,6 +58,7 @@ struct FileIntoMods<P: AsRef<Path> + Send + Sync> {
 impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
     fn sub_mod(&self, path: String, has_path_attr: bool) -> FileIntoMods<PathBuf> {
         FileIntoMods {
+            depth: self.depth + 1,
             current_dir: self.current_dir.as_ref().join(&path),
             current_mod_fs_name: Some(path),
             has_path_attr,
@@ -75,24 +78,28 @@ impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
         let mod_name = mod_name.to_string();
         trace!("Folding over module {}", mod_name);
 
-        if !self.current_dir.as_ref().exists() {
+        let (file_name, target_dir) = if self.depth == 0 {
+            let target_dir = self.current_dir.as_ref().join(&mod_fs_name);
+            (target_dir.join("mod.rs"), target_dir)
+        } else {
+            (
+                self.current_dir.as_ref().join(format!("{mod_fs_name}.rs")),
+                self.current_dir.as_ref().to_path_buf(),
+            )
+        };
+        if !target_dir.exists() {
             let mut dir_builder = DirBuilder::new();
-            info!("Creating directory {}", self.current_dir.as_ref().display());
+            info!("Creating directory {}", target_dir.display());
             dir_builder
                 .recursive(true)
-                .create(self.current_dir.as_ref())
+                .create(&target_dir)
                 .unwrap_or_else(|err| {
-                    panic!(
-                        "building {} failed with {}",
-                        self.current_dir.as_ref().display(),
-                        err
-                    )
+                    panic!("building {} failed with {}", target_dir.display(), err)
                 });
         }
 
         let mut sub_self = self.sub_mod(mod_fs_name.clone(), mod_has_path_attr);
         let folded_mod = fold_file(&mut sub_self, mod_file);
-        let file_name = self.current_dir.as_ref().join(mod_fs_name + ".rs");
         trace!(
             "Writing contents of module {} to file {}",
             mod_name,
@@ -149,7 +156,7 @@ fn extract_mod(
             if mod_has_path_attr {
                 let path_attr_val = match parent_fs_name {
                     Some(parent_fs_name) => format!("{parent_fs_name}/{mod_fs_name}.rs"),
-                    None => format!("{mod_fs_name}.rs"),
+                    None => format!("{mod_fs_name}/mod.rs"),
                 };
                 mod_item
                     .attrs
