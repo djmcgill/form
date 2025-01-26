@@ -3,6 +3,7 @@ use log::{debug, info, trace};
 use quote::ToTokens;
 use std::{
     fs::{DirBuilder, File},
+    hash::{DefaultHasher, Hash, Hasher},
     io::Write,
     path::{Path, PathBuf},
 };
@@ -21,7 +22,7 @@ pub fn create_directory_structure<P: AsRef<Path>>(
     let mut dir_builder = DirBuilder::new();
     dir_builder
         .recursive(true)
-        .create(&base_dir)
+        .create(base_dir)
         .with_context(|| format!("unable to create the directory {}", base_dir.display()))?;
     info!("Prepared target directory {}", base_dir.display());
 
@@ -56,10 +57,15 @@ struct FileIntoMods<P: AsRef<Path> + Send + Sync> {
     fmt: bool,
 }
 impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
-    fn sub_mod(&self, path: String, has_path_attr: bool) -> FileIntoMods<PathBuf> {
+    fn sub_mod(
+        &self,
+        target_dir: PathBuf,
+        path: String,
+        has_path_attr: bool,
+    ) -> FileIntoMods<PathBuf> {
         FileIntoMods {
             depth: self.depth + 1,
-            current_dir: self.current_dir.as_ref().join(&path),
+            current_dir: target_dir,
             current_mod_fs_name: Some(path),
             has_path_attr,
             fmt: self.fmt,
@@ -74,49 +80,71 @@ impl<P: AsRef<Path> + Send + Sync> FileIntoMods<P> {
         mod_fs_name: String,
         mod_has_path_attr: bool,
         mod_file: syn::File,
+        hsh: Option<u32>,
     ) -> Result<()> {
         let mod_name = mod_name.to_string();
         trace!("Folding over module {}", mod_name);
 
-        let (file_name, target_dir) = if self.depth == 0 {
-            let target_dir = self.current_dir.as_ref().join(&mod_fs_name);
+        let mut genmode = true;
+        let (file_name, target_dir) = if let Some(hsh) = hsh {
+            let target_dir = self
+                .current_dir
+                .as_ref()
+                .parent()
+                .unwrap()
+                .join("common")
+                .join(&mod_fs_name)
+                .join(format!("{hsh:08x}"));
+            if !target_dir.exists() {
+                make_dir(&target_dir);
+            } else {
+                genmode = false;
+            }
             (target_dir.join("mod.rs"), target_dir)
         } else {
+            if !self.current_dir.as_ref().exists() {
+                make_dir(&self.current_dir.as_ref());
+            }
             (
                 self.current_dir.as_ref().join(format!("{mod_fs_name}.rs")),
-                self.current_dir.as_ref().to_path_buf(),
+                self.current_dir.as_ref().join(&mod_fs_name),
             )
         };
-        if !target_dir.exists() {
-            let mut dir_builder = DirBuilder::new();
-            info!("Creating directory {}", target_dir.display());
-            dir_builder
-                .recursive(true)
-                .create(&target_dir)
-                .unwrap_or_else(|err| {
-                    panic!("building {} failed with {}", target_dir.display(), err)
-                });
-        }
 
-        let mut sub_self = self.sub_mod(mod_fs_name.clone(), mod_has_path_attr);
-        let folded_mod = fold_file(&mut sub_self, mod_file);
-        trace!(
-            "Writing contents of module {} to file {}",
-            mod_name,
-            file_name.display()
-        );
-        write_mod_file(folded_mod, &file_name, self.fmt)
-            .unwrap_or_else(|err| panic!("writing to {} failed with {}", file_name.display(), err));
+        if genmode {
+            let mut sub_self = self.sub_mod(target_dir, mod_fs_name.clone(), mod_has_path_attr);
+            let folded_mod = fold_file(&mut sub_self, mod_file);
+            trace!(
+                "Writing contents of module {} to file {}",
+                mod_name,
+                file_name.display()
+            );
+            write_mod_file(folded_mod, &file_name, self.fmt).unwrap_or_else(|err| {
+                panic!("writing to {} failed with {}", file_name.display(), err)
+            });
+        }
         Ok(())
     }
 }
 
+fn make_dir(dir: &Path) {
+    let mut dir_builder = DirBuilder::new();
+    info!("Creating directory {}", dir.display());
+    dir_builder
+        .recursive(true)
+        .create(&dir)
+        .unwrap_or_else(|err| panic!("building {} failed with {}", dir.display(), err));
+}
+
 impl<P: AsRef<Path> + Send + Sync> Fold for FileIntoMods<P> {
     fn fold_item(&mut self, mut item: Item) -> Item {
-        if let Some((mod_name, mod_fs_name, mod_has_path_attr, mod_file)) =
-            extract_mod(&mut item, &self.current_mod_fs_name, self.has_path_attr)
-        {
-            self.fold_sub_mod(mod_name, mod_fs_name, mod_has_path_attr, mod_file)
+        if let Some((mod_name, mod_fs_name, mod_has_path_attr, mod_file, hsh)) = extract_mod(
+            &mut item,
+            &self.current_mod_fs_name,
+            self.has_path_attr,
+            self.depth,
+        ) {
+            self.fold_sub_mod(mod_name, mod_fs_name, mod_has_path_attr, mod_file, hsh)
                 .unwrap();
         }
         fold_item(self, item)
@@ -125,7 +153,7 @@ impl<P: AsRef<Path> + Send + Sync> Fold for FileIntoMods<P> {
 
 fn write_mod_file(item_mod: syn::File, file_name: &Path, fmt: bool) -> Result<()> {
     trace!("Opening file {}", file_name.display());
-    let mut file = File::create(&file_name)
+    let mut file = File::create(file_name)
         .with_context(|| format!("unable to create file {}", file_name.display()))?;
     trace!("Successfully opened file {}", file_name.display());
     debug!("Writing to file {}", file_name.display());
@@ -136,7 +164,8 @@ fn extract_mod(
     node: &mut Item,
     parent_fs_name: &Option<String>,
     parent_has_path_attr: bool,
-) -> Option<(Ident, String, bool, syn::File)> {
+    depth: u32,
+) -> Option<(Ident, String, bool, syn::File, Option<u32>)> {
     let top_level = parent_fs_name.is_none();
     if let Item::Mod(mod_item) = &mut *node {
         if let Some(item_content) = mod_item.content.take() {
@@ -153,17 +182,31 @@ fn extract_mod(
                 mod_name_str
             };
 
-            if mod_has_path_attr {
+            let mod_file = make_file(items);
+            let hsh = if depth == 0 {
+                let mut hasher = DefaultHasher::new();
+                mod_file.hash(&mut hasher);
+                Some((hasher.finish() & (u32::MAX as u64)) as u32)
+            } else {
+                None
+            };
+            if mod_has_path_attr || depth == 0 {
                 let path_attr_val = match parent_fs_name {
                     Some(parent_fs_name) => format!("{parent_fs_name}/{mod_fs_name}.rs"),
-                    None => format!("{mod_fs_name}/mod.rs"),
+                    None => {
+                        if let Some(hsh) = hsh {
+                            format!("../common/{mod_fs_name}/{hsh:08x}/mod.rs")
+                        } else {
+                            format!("{mod_fs_name}/mod.rs")
+                        }
+                    }
                 };
                 mod_item
                     .attrs
                     .push(parse_quote! { #[path = #path_attr_val] });
             }
 
-            Some((mod_name, mod_fs_name, mod_has_path_attr, make_file(items)))
+            Some((mod_name, mod_fs_name, mod_has_path_attr, mod_file, hsh))
         } else if top_level {
             None
         } else {
